@@ -3,6 +3,9 @@ service ssh start
 echo "----------------"
 echo "ISLAB ubuntu container"
 uname -a
-echo "run with -it to get an interactive shell. Have fun!"
+echo "run with -it to get an interactive shell."
+echo "press Ctrl-P Q to detach"
 echo "----------------"
-/bin/bash
+cd ..
+tail -f /dev/null
+

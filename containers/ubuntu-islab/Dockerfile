@@ -10,7 +10,7 @@ WORKDIR /root/.deploy/
 # if other operations fail, we can resume from a downloaded cache layer.
 RUN cp sources.list.1804 /etc/apt/sources.list && \
     ./repeat.sh apt-get update && \
-    ./repeat.sh apt-get -y install vim git python-pip traceroute openssh-server tree pv
+    ./repeat.sh apt-get -y install vim git python-pip traceroute openssh-server tree pv net-tools
 
 RUN ./deploy.sh
     
