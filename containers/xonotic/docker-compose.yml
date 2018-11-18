@@ -1,0 +1,8 @@
+version: '3'
+services:
+    xonotic:
+        build: .
+#        read_only: true
+        tmpfs: /tmp
+        ports:
+            - "26000:26000"
