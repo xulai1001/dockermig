@@ -1,27 +1,20 @@
 #!/bin/bash
 pushd ~/src
 git clone https://github.com/containers/skopeo
-git clone https://github.com/opencontainers/runc
+gopm bin github.com/opencontainers/runc
 git clone https://github.com/checkpoint-restore/criu
 
 echo "- skopeo ..."
-read -n1
+read -n1 -p "press key..."
 pushd skopeo
 make binary
-read -n1
-sudo make install
-popd
-
-echo "- runc ..."
-read -n1
-pushd runc
-make
-read -n1
+read -n1 -p "press key..."
 sudo make install
 popd
 
 echo "- criu ..."
-read -n1
+pushd criu
+read -n1 -p "press key..."
 make
-read -n1
+read -n1 -p "press key..."
 sudo make install

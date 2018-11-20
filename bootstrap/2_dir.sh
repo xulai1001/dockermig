@@ -1,6 +1,6 @@
 #!/bin/bash
 pushd ~
-mkdir go src .gopm
+mkdir -p go src .gopm
 pushd go
-mkdir bin src pkg
+mkdir -p bin src pkg
 tree ~
