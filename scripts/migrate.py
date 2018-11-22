@@ -1,0 +1,91 @@
+#!/usr/bin/python
+import socket, sys, select
+import time, os, shutil, subprocess, commands
+import contextlib
+import distutils.util
+
+container = sys.argv[1]
+dest = sys.argv[2]
+lazy = True
+pre = True
+
+remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
+# bundle: original container
+# predump: predump image
+# checkpoint: checkpoint image
+
+# helpers
+# https://stackoverflow.com/questions/6194499/pushd-through-os-system
+#@contextlib.contextmanager
+#def pushd(d):
+#    last_dir = os.getcwd()
+#    os.chdir(d)
+#    print "> entering %s" % d
+#    yield
+#    os.chdir(last_dir)
+
+retvar = 0
+def exit_on_error():
+    global retvar
+    if retvar != 0:
+        print "- error: %d, exiting..." % retvar
+        sys.exit(retvar)  
+
+def run_cmd_timed(cmd):
+    global retvar
+    print "- " + cmd
+    st = time.time()
+    retvar = os.system(cmd)
+    exit_on_error()
+    print "- time: %.2g s" % (time.time() - st)
+
+# workers
+def pre_dump():
+    print "- start predump..."
+    run_cmd_timed("runc checkpoint --pre-dump --image-path predump %s" % container)
+    retvar, psize = commands.getstatusoutput("du -hs predump")
+    print "- PRE-DUMP size: %s" % psize
+    
+def checkpoint_dump():    
+    run_cmd_timed("runc checkpoint --image-path checkpoint --parent-path predump %s" % container)
+    ret, csize = commands.getstatusoutput("du -hs checkpoint")
+    print "- CHECKPOINT size: %s" % csize
+
+def lazy_dump():
+    global retvar
+    cmd = """runc checkpoint --image-path checkpoint
+                  --lazy-pages --page-server 0.0.0.0:27000
+                  --status-fd copy_pipe
+                  %s""" % container
+    
+    if os.path.exists("copy_pipe"):
+        os.unlink("copy_pipe")
+    os.mkfifo("copy_pipe")
+    
+    print "- " + cmd
+    st = time.time()
+    p = subprocess.Popen(cmd, shell=True)
+    cp = os.open("copy_pipe", os.O_RDONLY)
+    x = os.read(cp, 1)
+    if x == "\0":
+        print "- ready for lazy page copy..."
+    print "- time: %.2g s, retvar: %d" % (time.time() - st, retvar)
+    retvar, csize = commands.getstatusoutput("du -hs checkpoint")
+    print "- CHECKPOINT size: %s" % csize
+    
+def send_pre_dump():
+    print "- send PRE-DUMP to %s:%s" % (dest, remote_base_path)
+    run_cmd_timed("rsync -aqz predump %s:%s" % (dest, remote_base_path))
+    
+def send_checkpoint():
+    print "- send CHECKPOINT to %s:%s" % (dest, remote_base_path)
+    run_cmd_timed("rsync -aqz checkpoint %s:%s" % (dest, remote_base_path))
+    
+if __name__ == "__main__":
+    os.system("rm -rf predump checkpoint")
+    pre_dump()
+   # send_pre_dump()
+    checkpoint_dump()
+   # send_checkpoint()
+    
+    
