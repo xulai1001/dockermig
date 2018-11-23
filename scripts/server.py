@@ -42,11 +42,12 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             os.system("rm -rf predump checkpoint")
         return bundle_path
         
+    @pyjsonrpc.rpcmethod        
     def restore(self, container):
         print "> restore: %s" % container
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
-            run_cmd_timed("runc restore -d --image-path checkpoint --work-path checkpoint %s" % container)
+            run_cmd_timed("x-terminal-emulator -x runc restore --image-path checkpoint --work-path checkpoint %s" % container)
         return retvar
 
 if __name__ == "__main__":

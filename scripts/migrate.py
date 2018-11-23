@@ -79,8 +79,8 @@ def lazy_dump():
 def send_rootfs():
     global remote_base_path
     print "- send ROOTFS to %s:%s/rootfs" % (dest, remote_base_path)
-    run_cmd_timed("rsync -aqz rootfs %s:%s" % (dest, remote_base_path)
-    os.system("scp config.json %s:%s" % (dest, remote_base_path)
+    run_cmd_timed("rsync -aqz rootfs %s:%s" % (dest, remote_base_path))
+    os.system("scp config.json %s:%s" % (dest, remote_base_path))
     
 def send_pre_dump():
     global remote_base_path
