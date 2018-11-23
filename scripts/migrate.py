@@ -3,11 +3,14 @@ import socket, sys, select
 import time, os, shutil, subprocess, commands
 import contextlib
 import distutils.util
+import pyjsonrpc, socket
 
 container = sys.argv[1]
 dest = sys.argv[2]
 lazy = True
 pre = True
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
 
 remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
 # bundle: original container
@@ -74,6 +77,7 @@ def lazy_dump():
     print "- CHECKPOINT size: %s" % csize
     
 def send_pre_dump():
+    global remote_base_path
     print "- send PRE-DUMP to %s:%s" % (dest, remote_base_path)
     run_cmd_timed("rsync -aqz predump %s:%s" % (dest, remote_base_path))
     
@@ -82,10 +86,16 @@ def send_checkpoint():
     run_cmd_timed("rsync -aqz checkpoint %s:%s" % (dest, remote_base_path))
     
 if __name__ == "__main__":
+    global remote_base_path
+    cli = pyjsonrpc.HttpClient(url = "http://%s:9000/jsonrpc" % dest)
     os.system("rm -rf predump checkpoint")
+    remote_base_path = cli.prepare(ip, container)
+    print "- remote path: %s:%s" % (dest, remote_base_path)
+    
     pre_dump()
-   # send_pre_dump()
+    send_pre_dump()
     checkpoint_dump()
-   # send_checkpoint()
+    send_checkpoint()
+    cli.restore(container)
     
     
