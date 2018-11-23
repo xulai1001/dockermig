@@ -45,18 +45,18 @@ def run_cmd_timed(cmd):
 # workers
 def pre_dump():
     print "- start predump..."
-    run_cmd_timed("runc checkpoint --pre-dump --image-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --pre-dump --image-path predump %s" % container)
     retvar, psize = commands.getstatusoutput("du -hs predump")
     print "- PRE-DUMP size: %s" % psize
     
 def checkpoint_dump():    
-    run_cmd_timed("runc checkpoint --image-path checkpoint --parent-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --image-path checkpoint --parent-path predump %s" % container)
     ret, csize = commands.getstatusoutput("du -hs checkpoint")
     print "- CHECKPOINT size: %s" % csize
 
 def lazy_dump():
     global retvar
-    cmd = """runc checkpoint --image-path checkpoint
+    cmd = """sudo runc checkpoint --image-path checkpoint
                   --lazy-pages --page-server 0.0.0.0:27000
                   --status-fd copy_pipe
                   %s""" % container
@@ -75,6 +75,12 @@ def lazy_dump():
     print "- time: %.2g s, retvar: %d" % (time.time() - st, retvar)
     retvar, csize = commands.getstatusoutput("du -hs checkpoint")
     print "- CHECKPOINT size: %s" % csize
+
+def send_rootfs():
+    global remote_base_path
+    print "- send ROOTFS to %s:%s/rootfs" % (dest, remote_base_path)
+    run_cmd_timed("rsync -aqz rootfs %s:%s" % (dest, remote_base_path)
+    os.system("scp config.json %s:%s" % (dest, remote_base_path)
     
 def send_pre_dump():
     global remote_base_path
@@ -82,6 +88,7 @@ def send_pre_dump():
     run_cmd_timed("rsync -aqz predump %s:%s" % (dest, remote_base_path))
     
 def send_checkpoint():
+    global remote_base_path
     print "- send CHECKPOINT to %s:%s" % (dest, remote_base_path)
     run_cmd_timed("rsync -aqz checkpoint %s:%s" % (dest, remote_base_path))
     
@@ -92,6 +99,7 @@ if __name__ == "__main__":
     remote_base_path = cli.prepare(ip, container)
     print "- remote path: %s:%s" % (dest, remote_base_path)
     
+    send_rootfs()
     pre_dump()
     send_pre_dump()
     checkpoint_dump()
