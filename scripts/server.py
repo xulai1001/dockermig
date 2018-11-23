@@ -47,7 +47,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         print "> restore: %s" % container
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
-            run_cmd_timed("x-terminal-emulator -x runc restore --image-path checkpoint --work-path checkpoint %s" % container)
+            run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint %s" % container)
         return retvar
 
 if __name__ == "__main__":
