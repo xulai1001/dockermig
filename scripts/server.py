@@ -52,7 +52,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container):
-        print "> lazy-restore: %s from %s" % (container, container_ip)
+        print "> lazy-restore: %s from %s" % (container, client_ip)
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
             run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % container)
