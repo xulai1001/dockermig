@@ -49,6 +49,15 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         with pushd(bundle_path):
             run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint %s" % container)
         return retvar
+        
+    @pyjsonrpc.rpcmethod
+    def lazy_restore(self, client_ip, container):
+        print "> lazy-restore: %s from %s" % (container, container_ip)
+        bundle_path = base_path + container + "/bundle/"
+        with pushd(bundle_path):
+            run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % container)
+            run_cmd_timed("criu lazy-pages --page-server --address %s --port 27000 -vv -D checkpoint -W checkpoint" % client_ip)
+        return retvar
 
 if __name__ == "__main__":
     svr = pyjsonrpc.ThreadingHttpServer(
