@@ -1,4 +1,5 @@
 id_rsa.pub
+**/bundle
 containers/counter/bundle
 containers/counter/oci
 containers/xonotic/xonotic

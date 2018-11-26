@@ -34,17 +34,17 @@ def run_cmd_timed(cmd):
     st = time.time()
     retvar = os.system(cmd)
     exit_on_error()
-    print "- time: %.2g s" % (time.time() - st)
+    print "- time: %.2f s" % (time.time() - st)
 
 def server_path():
     return "%s@%s:%s" % (username, server, base_path)
 
 # restore routines     
-def restore(self, container):
+def restore(container):
     print "> restore: %s" % container
     run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint %s" % container)
     
-def lazy_restore(self, svr, port, c):
+def lazy_restore(svr, port, c):
     print "> lazy-restore: %s from %s:%d" % (c, svr, port)
     run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % c)
     run_cmd_timed("criu lazy-pages --page-server --address %s --port %d -vv -D checkpoint -W checkpoint" % (svr, port))
@@ -92,9 +92,12 @@ if __name__ == "__main__":
             cli.pack_rootfs(container)
             pull_rootfs()
         sync_rootfs()
+        print "- create PRE-DUMP..."
         cli.predump(container)
         pull_predump()
+        print "- create CHECKPOINT..."
         ret = cli.lazy_dump(container)
         pull_checkpoint()
+        print "- start lazy-restore"
         lazy_restore(server, ret["port"], container)
         
