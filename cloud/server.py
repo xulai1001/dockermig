@@ -56,6 +56,11 @@ class CloudMigrateService(pyjsonrpc.HttpRequestHandler):
         print "> list containers"
         retvar, ret = commands.getstatusoutput("sudo runc list")
         return ret
+
+    @pyjsonrpc.rpcmethod
+    def pack_rootfs(self, container):
+        with pushd(bundle(container)):
+            run_cmd_timed("sudo tar czf rootfs.tar.gz rootfs")
         
     @pyjsonrpc.rpcmethod
     def predump(self, container):
@@ -65,7 +70,7 @@ class CloudMigrateService(pyjsonrpc.HttpRequestHandler):
             run_cmd_timed("sudo runc checkpoint --pre-dump --image-path predump %s" % container)
             retvar, psize = commands.getstatusoutput("du -hs predump")
         return dict(path=bundle(container)+ "predump", size=psize)
-        
+    
     @pyjsonrpc.rpcmethod
     def checkpoint_dump(self, container):
         print "> start checkpoint dump: %s" % container

@@ -7,7 +7,7 @@ import pyjsonrpc, socket
 
 server = sys.argv[1]
 container = sys.argv[2]
-username = "ubuntu"
+username = "root"
 cli = None
 base_path = ""
 
@@ -35,7 +35,10 @@ def run_cmd_timed(cmd):
     retvar = os.system(cmd)
     exit_on_error()
     print "- time: %.2g s" % (time.time() - st)
-    
+
+def server_path():
+    return "%s@%s:%s" % (username, server, base_path)
+
 # restore routines     
 def restore(self, container):
     print "> restore: %s" % container
@@ -43,7 +46,7 @@ def restore(self, container):
     
 def lazy_restore(self, svr, port, c):
     print "> lazy-restore: %s from %s:%d" % (c, svr, port)
-    run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % c
+    run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % c)
     run_cmd_timed("criu lazy-pages --page-server --address %s --port %d -vv -D checkpoint -W checkpoint" % (svr, port))
     return retvar
 
@@ -54,33 +57,41 @@ def check_running(c):
     print ret
 
 def pull_rootfs():
-    print "- pull ROOTFS from %s" % dest
-    os.system("mkdir -p rootfs")
-    run_cmd_timed("rsync -aqz %s:%s rootfs/" % (server, base_path+"rootfs"))
-    os.system("scp %s:%s/config.json ." % (server, base_path))
+    print "- pull ROOTFS from %s" % server
+    run_cmd_timed("scp %s/rootfs.tar.gz ." % server_path())
+    run_cmd_timed("tar xf rootfs.tar.gz")
+    os.system("rm rootfs.tar.gz")
+
+def sync_rootfs():
+    print "- sync ROOTFS from %s" % server
+    run_cmd_timed("rsync -avz %s/rootfs/ rootfs/" % server_path())
+    os.system("scp %s/config.json ." % server_path())
     
 def pull_predump():
     print "- pull PRE-DUMP..."
     os.system("mkdir -p predump")
-    run_cmd_timed("rsync -aqz %s:%s predump/" % (server, base_path+"predump"))
+    run_cmd_timed("rsync -aqz %s/predump/ predump/" % server_path())
     
 def pull_checkpoint():
     print "- pull CHECKPOINT..."
     os.system("mkdir -p checkpoint")
-    run_cmd_timed("rsync -aqz %s:%s checkpoint/" % (server, base_path+"checkpoint"))
+    run_cmd_timed("rsync -aqz %s/checkpoint/ checkpoint/" % server_path())
     
 if __name__ == "__main__":
     global cli
     global base_path
     print "- migrate %s from %s" % (container, server)
     print "- connect to %s" % server
-    cli = pyjsonrpc.HttpClient(url = "http://%s:9000/jsonrpc" % dest)
+    cli = pyjsonrpc.HttpClient(url = "http://%s:9000/jsonrpc" % server)
     base_path = cli.base_path(container)
     
     os.system("mkdir -p bundle")
     with pushd("bundle"):
         check_running(container)
-        pull_rootfs()
+        if not os.path.exists("rootfs"):
+            cli.pack_rootfs(container)
+            pull_rootfs()
+        sync_rootfs()
         cli.predump(container)
         pull_predump()
         ret = cli.lazy_dump(container)
