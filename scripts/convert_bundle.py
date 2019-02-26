@@ -20,6 +20,15 @@ conf = json.load(open("bundle/config.json"))
 #pprint.pprint(conf)
 spec["process"].update(conf["process"])
 spec["root"].update(conf["root"])
+for it in spec["process"]["capabilities"].keys():
+    spec["process"]["capabilities"][it] += [
+        "CAP_CHOWN", "CAP_DAC_OVERRIDE", "CAP_FSETID", "CAP_FOWNER",
+        "CAP_SETGID", "CAP_SETUID", "CAP_SETFCAP", "CAP_MKNOD",
+        "CAP_NET_RAW", "CAP_SETPCAP", "CAP_SYS_CHROOT"
+        ]
+spec["linux"]["namespaces"].remove({"type": "network"}) # use host network
+spec["root"]["readonly"] = False
+
 json.dump(spec, open("bundle/config.json", "w"))
 os.system("rm config.json")
 print "- give access to rootfs/%s" % spec["process"]["cwd"]

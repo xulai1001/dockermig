@@ -52,18 +52,18 @@ def run_cmd_timed(cmd):
 # workers
 def pre_dump():
     print "- start predump..."
-    run_cmd_timed("sudo runc checkpoint --pre-dump --image-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --pre-dump --tcp-established --image-path predump %s" % container)
     retvar, psize = commands.getstatusoutput("du -hs predump")
     print "- PRE-DUMP size: %s" % psize
     
 def checkpoint_dump():    
-    run_cmd_timed("sudo runc checkpoint --image-path checkpoint --parent-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --tcp-established --image-path checkpoint --parent-path predump %s" % container)
     ret, csize = commands.getstatusoutput("du -hs checkpoint")
     print "- CHECKPOINT size: %s" % csize
 
 def lazy_dump():
     global retvar
-    cmd = """sudo runc checkpoint --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
+    cmd = """sudo runc checkpoint --tcp-established --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
     os.mkfifo("copy_pipe")

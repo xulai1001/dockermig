@@ -56,7 +56,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
             run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % container)
-            run_cmd_timed("criu lazy-pages --page-server --address %s --port 27000 -vv -D checkpoint -W checkpoint" % client_ip)
+            run_cmd_timed("criu lazy-pages --tcp-established --page-server --address %s --port 27000 -vv -D checkpoint -W checkpoint" % client_ip)
         return retvar
 
 if __name__ == "__main__":
