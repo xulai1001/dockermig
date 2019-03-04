@@ -21,7 +21,7 @@ vrrp_instance VI_1 {
     }
 }
 
-virtual_server 192.168.100.100 22 {
+virtual_server 10.122.0.100 22 {
     delay_loop 1
     lb_algo rr
     lb_kind NAT
@@ -41,7 +41,7 @@ virtual_server 192.168.100.100 22 {
     }
     
     TCP_CHECK {
-        bindto 192.168.100.100
+        bindto 10.122.0.100
         connect_timeout 2
         connect_port 22
     }
