@@ -1,14 +1,15 @@
 global_defs {
-    router_id ubuntu_01
+    router_id ubuntu_02
 }
 
 vrrp_instance VI_1 {
-    state MASTER
-    priority 150
+    state BACKUP
+    nopreempt
+    priority 100
     
     interface ens160
     virtual_router_id 1
-    advent_int 1
+    advert_int 1
         
     authentication {
         auth_type PASS
@@ -16,7 +17,7 @@ vrrp_instance VI_1 {
     }
     
     virtual_ipaddress {
-        192.168.100.100
+        192.168.100.100/16
     }
 }
 
@@ -30,14 +31,17 @@ virtual_server 192.168.100.100 22 {
     protocol TCP
     
     real_server 192.168.20.39 22 {
+        inhibit_on_failure  
         weight 1
     }
     
     real_server 192.168.20.19 22 {
+        inhibit_on_failure
         weight 1
     }
     
     TCP_CHECK {
+        bindto 192.168.100.100
         connect_timeout 2
         connect_port 22
     }
