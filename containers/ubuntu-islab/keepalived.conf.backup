@@ -21,28 +21,3 @@ vrrp_instance VI_1 {
     }
 }
 
-virtual_server 10.122.0.100 22 {
-    delay_loop 1
-    lb_algo rr
-    lb_kind NAT
-    net_mask 255.255.0.0
-    persistence_timeout 30
-
-    protocol TCP
-    
-    real_server 192.168.20.39 22 {
-        inhibit_on_failure  
-        weight 1
-    }
-    
-    real_server 192.168.20.19 22 {
-        inhibit_on_failure
-        weight 1
-    }
-    
-    TCP_CHECK {
-        bindto 10.122.0.100
-        connect_timeout 2
-        connect_port 22
-    }
-}
