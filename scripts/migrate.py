@@ -95,6 +95,14 @@ def send_checkpoint():
     print "- send CHECKPOINT to %s:%s" % (dest, remote_base_path)
     run_cmd_timed("rsync -aqz checkpoint %s:%s" % (dest, remote_base_path))
     
+def stop_kad():
+    print "- stop keepalived..."
+    run_cmd_timed("killall keepalived")
+    print "- wait 3 sec"
+    time.sleep(3)
+    print "-------------"
+    os.system("tail /var/log/syslog")
+    
 if __name__ == "__main__":
     global remote_base_path
     ip = get_ip()
@@ -110,6 +118,7 @@ if __name__ == "__main__":
 #    checkpoint_dump()
     lazy_dump()
     send_checkpoint()
+    stop_kad()
 #    cli.restore(container)
     cli.lazy_restore(ip, container)
     

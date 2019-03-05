@@ -31,6 +31,11 @@ def run_cmd_timed(cmd):
     retvar = os.system(cmd)
     warn_on_error()
     print "- time: %.2g s" % (time.time() - st)
+    
+def start_kad():
+    print "- start keepalived..."
+    os.system("keepalived -d")
+    os.system("gnome-terminal -- tail -f /var/log/syslog")
 
 class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
@@ -53,6 +58,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container):
         print "> lazy-restore: %s from %s" % (container, client_ip)
+        start_kad()
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
             run_cmd_timed("gnome-terminal -- /usr/local/sbin/runc restore --image-path checkpoint --work-path checkpoint --lazy-pages %s" % container)
