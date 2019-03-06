@@ -63,16 +63,16 @@ def checkpoint_dump():
 
 def lazy_dump():
     global retvar
-    cmd = """sudo runc checkpoint --tcp-established --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
+    cmd = """gnome-terminal -t 'CRIU page server' -- /usr/local/sbin/runc checkpoint --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
     os.mkfifo("copy_pipe")
     
     print "- " + cmd
     st = time.time()
-    p = subprocess.Popen(cmd, shell=True)
+    os.system(cmd)
     cp = os.open("copy_pipe", os.O_RDONLY)
-    x = os.read(cp, 1)
+    x = os.read(cp, 1) # wait here
     if x == "\0":
         print "- ready for lazy page copy..."
     print "- time: %.2g s, retvar: %d" % (time.time() - st, retvar)
