@@ -52,7 +52,7 @@ def run_cmd_timed(cmd):
 # workers
 def pre_dump():
     print "- start predump..."
-    run_cmd_timed("sudo runc checkpoint --pre-dump --tcp-established --image-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --pre-dump --image-path predump %s" % container)
     retvar, psize = commands.getstatusoutput("du -hs predump")
     print "- PRE-DUMP size: %s" % psize
     
@@ -98,10 +98,6 @@ def send_checkpoint():
 def stop_kad():
     print "- stop keepalived..."
     run_cmd_timed("killall keepalived")
-    print "- wait 3 sec"
-    time.sleep(3)
-    print "-------------"
-    os.system("tail /var/log/syslog")
     
 if __name__ == "__main__":
     global remote_base_path
