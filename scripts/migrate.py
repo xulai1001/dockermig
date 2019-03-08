@@ -33,7 +33,6 @@ def get_ip():
 #    os.chdir(last_dir)
 
 retvar = 0
-remote_base_path = ""
 
 def exit_on_error():
     global retvar
@@ -57,13 +56,13 @@ def pre_dump():
     print "- PRE-DUMP size: %s" % psize
     
 def checkpoint_dump():    
-    run_cmd_timed("sudo runc checkpoint --tcp-established --image-path checkpoint --parent-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --tcp-established --image-path checkpoint --parent-path %s/bundle/predump %s" % (remote_base_path, container))
     ret, csize = commands.getstatusoutput("du -hs checkpoint")
     print "- CHECKPOINT size: %s" % csize
 
 def lazy_dump():
     global retvar
-    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc checkpoint --tcp-established --image-path checkpoint --shell-job --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
+    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc checkpoint --tcp-established --image-path checkpoint --parent-path %s/bundle/predump --shell-job --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % (remote_base_path, container)
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
     os.mkfifo("copy_pipe")
@@ -111,10 +110,10 @@ if __name__ == "__main__":
     send_rootfs()
     pre_dump()
     send_pre_dump()
-#    checkpoint_dump()
-    lazy_dump()
+    checkpoint_dump()
+#    lazy_dump()
     send_checkpoint()
     stop_kad()
-#    cli.restore(container)
-    cli.lazy_restore(ip, container)
+    cli.restore(container)
+#    cli.lazy_restore(ip, container)
     
