@@ -63,7 +63,7 @@ def checkpoint_dump():
 
 def lazy_dump():
     global retvar
-    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc checkpoint --tcp-established --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
+    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc checkpoint --tcp-established --image-path checkpoint --shell-job --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
     os.mkfifo("copy_pipe")
