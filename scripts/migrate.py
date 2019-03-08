@@ -52,7 +52,7 @@ def run_cmd_timed(cmd):
 # workers
 def pre_dump():
     print "- start predump..."
-    run_cmd_timed("sudo runc checkpoint --pre-dump --image-path predump %s" % container)
+    run_cmd_timed("sudo runc checkpoint --tcp-established --pre-dump --image-path predump %s" % container)
     retvar, psize = commands.getstatusoutput("du -hs predump")
     print "- PRE-DUMP size: %s" % psize
     
@@ -63,7 +63,7 @@ def checkpoint_dump():
 
 def lazy_dump():
     global retvar
-    cmd = """gnome-terminal -t 'CRIU page server' -- /usr/local/sbin/runc checkpoint --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
+    cmd = """gnome-terminal -t 'CRIU page server' -- /usr/local/sbin/runc checkpoint --tcp-established --image-path checkpoint --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % container    
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
     os.mkfifo("copy_pipe")
