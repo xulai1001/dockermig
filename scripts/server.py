@@ -35,7 +35,7 @@ def run_cmd_timed(cmd):
 def start_kad():
     print "- start keepalived..."
     os.system("keepalived -d")
-    os.system("gnome-terminal -- tail -f /var/log/syslog")
+    os.system("gnome-terminal -t 'Keepalived log' -- tail -f /var/log/syslog")
 
 class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
@@ -51,7 +51,11 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     def restore(self, container):
         print "> restore: %s" % container
         bundle_path = base_path + container + "/bundle/"
+        start_kad()
         with pushd(bundle_path):
+            print "- restore symlink..."
+            print "ln -s %s/predump checkpoint/parent" % bundle_path
+            os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
             run_cmd_timed("gnome-terminal -- /home/islab/src/dockermig/scripts/run.sh runc restore --tcp-established --shell-job --image-path checkpoint --work-path checkpoint %s" % container)
         return retvar
         

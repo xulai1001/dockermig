@@ -57,6 +57,7 @@ def pre_dump():
     
 def checkpoint_dump():    
     run_cmd_timed("sudo runc checkpoint --tcp-established --image-path checkpoint --parent-path %s/bundle/predump %s" % (remote_base_path, container))
+    os.system("unlink checkpoint/parent") # remove symlink to parent. will be restored in dest host
     ret, csize = commands.getstatusoutput("du -hs checkpoint")
     print "- CHECKPOINT size: %s" % csize
 
@@ -99,7 +100,6 @@ def stop_kad():
     run_cmd_timed("killall keepalived")
     
 if __name__ == "__main__":
-    global remote_base_path
     ip = get_ip()
     print "- host ip: %s" % ip
     cli = pyjsonrpc.HttpClient(url = "http://%s:9000/jsonrpc" % dest)
