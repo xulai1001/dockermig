@@ -36,6 +36,16 @@ def start_kad():
     print "- start keepalived..."
     os.system("keepalived -d")
     os.system("gnome-terminal -t 'Keepalived log' -- tail -f /var/log/syslog")
+    
+def wait_ip(ipaddr):
+    down = True
+    while down:
+        try:
+            test_socket = socket.socket()
+            test_socket.bind((ipaddr, 27001))
+        except: continue
+        down = False
+        print "- ip %s is up" % ipaddr
 
 class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
@@ -62,12 +72,10 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container):
         print "> lazy-restore: %s from %s" % (container, client_ip)
-        print "- tweak fw rules"
-        os.system("iptables -F")
         print "- start keepalived ..."
         start_kad()
-        print "- wait for keepalived to start..."
-        time.sleep(1)
+        print "- wait for ip address takes effect..."
+        wait_ip("192.168.100.100")
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
             print "- restore symlink..."
@@ -78,6 +86,9 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             os.system("gnome-terminal -t 'CRIU lazy-pages' -- /home/islab/src/dockermig/scripts/run.sh criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpoint" % client_ip)
             print "- live restore container"
             run_cmd_timed("gnome-terminal -t 'Container - %s' -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (container, bundle_path, container))
+            time.sleep(5)
+            print "- tweak fw rules"
+            os.system("iptables -F")
 
         return retvar
 
