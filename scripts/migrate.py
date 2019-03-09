@@ -56,14 +56,14 @@ def pre_dump():
     print "- PRE-DUMP size: %s" % psize
     
 def checkpoint_dump():    
-    run_cmd_timed("sudo runc checkpoint --tcp-established --image-path checkpoint --parent-path %s/bundle/predump %s" % (remote_base_path, container))
+    run_cmd_timed("sudo runc checkpoint --debug --tcp-established --shell-job --file-locks --image-path checkpoint --parent-path %s/bundle/predump %s" % (remote_base_path, container))
     os.system("unlink checkpoint/parent") # remove symlink to parent. will be restored in dest host
     ret, csize = commands.getstatusoutput("du -hs checkpoint")
     print "- CHECKPOINT size: %s" % csize
 
 def lazy_dump():
     global retvar
-    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc checkpoint --tcp-established --image-path checkpoint --parent-path %s/bundle/predump --shell-job --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % (remote_base_path, container)
+    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc checkpoint --debug --tcp-established --shell-job --file-locks --image-path checkpoint --parent-path %s/bundle/predump --shell-job --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % (remote_base_path, container)
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
     os.mkfifo("copy_pipe")
