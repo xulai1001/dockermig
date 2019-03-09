@@ -73,6 +73,8 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
 #            time.sleep(1)
             print "- live restore container"
             run_cmd_timed("gnome-terminal -t 'Container - %s' -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (container, bundle_path, container))
+            print "- tweak fw rules"
+            os.system("iptables -F")
         return retvar
 
 if __name__ == "__main__":
