@@ -62,19 +62,23 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container):
         print "> lazy-restore: %s from %s" % (container, client_ip)
+        print "- tweak fw rules"
+        os.system("iptables -F")
+        print "- start keepalived ..."
         start_kad()
+        print "- wait for keepalived to start..."
+        time.sleep(1)
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
             print "- restore symlink..."
             print "ln -s %s/predump checkpoint/parent" % bundle_path
+            os.system("unlink checkpoint/parent")
             os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
             print "- connect lazy-page server"
             os.system("gnome-terminal -t 'CRIU lazy-pages' -- /home/islab/src/dockermig/scripts/run.sh criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpoint" % client_ip)
-#            time.sleep(1)
             print "- live restore container"
             run_cmd_timed("gnome-terminal -t 'Container - %s' -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (container, bundle_path, container))
-            print "- tweak fw rules"
-            os.system("iptables -F")
+
         return retvar
 
 if __name__ == "__main__":
