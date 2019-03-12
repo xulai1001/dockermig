@@ -67,6 +67,10 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "ln -s %s/predump checkpoint/parent" % bundle_path
             os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
             run_cmd_timed("gnome-terminal -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s %s" % (bundle_path, container))
+            time.sleep(2)
+            print "- tweak fw rules"
+            os.system("iptables -F")
+            os.system("iptables -t nat -F")
         return retvar
         
     @pyjsonrpc.rpcmethod
@@ -86,9 +90,10 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             os.system("gnome-terminal -t 'CRIU lazy-pages' -- /home/islab/src/dockermig/scripts/run.sh criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpoint" % client_ip)
             print "- live restore container"
             run_cmd_timed("gnome-terminal -t 'Container - %s' -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (container, bundle_path, container))
-            time.sleep(5)
+            time.sleep(2)
             print "- tweak fw rules"
             os.system("iptables -F")
+            os.system("iptables -t nat -F")
 
         return retvar
 
