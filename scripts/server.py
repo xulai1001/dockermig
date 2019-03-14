@@ -46,6 +46,17 @@ def wait_ip(ipaddr):
         except: continue
         down = False
         print "- ip %s is up" % ipaddr
+        
+def new_window(title, cmdline):
+    print "> w: %s, cmd: %s" % (title, cmdline)
+    os.system("gnome-terminal -t '%s' -- /home/islab/src/dockermig/scripts/run.sh %s" % (title, cmdline))
+    
+def getsize(path):
+    global retvar
+    retvar, sz = commands.getstatusoutput("du -hs %s" % path)
+    return sz
+        
+extensions = "--tcp-established --shell-job --file-locks"
 
 class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
@@ -66,7 +77,8 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "- restore symlink..."
             print "ln -s %s/predump checkpoint/parent" % bundle_path
             os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
-            run_cmd_timed("gnome-terminal -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s %s" % (bundle_path, container))
+            new_window("Restore - %s" % container,
+                       "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s %s" % (extensions, bundle_path, container))
             time.sleep(2)
             print "- tweak fw rules"
             os.system("iptables -F")
@@ -76,8 +88,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container):
         print "> lazy-restore: %s from %s" % (container, client_ip)
-        print "- start keepalived ..."
-        start_kad()
+        start_kad() # start keepalived
         print "- wait for ip address takes effect..."
         wait_ip("192.168.100.100")
         bundle_path = base_path + container + "/bundle/"
@@ -86,10 +97,13 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "ln -s %s/predump checkpoint/parent" % bundle_path
             os.system("unlink checkpoint/parent")
             os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
+            
             print "- connect lazy-page server"
-            os.system("gnome-terminal -t 'CRIU lazy-pages' -- /home/islab/src/dockermig/scripts/run.sh criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpoint" % client_ip)
+            new_window("CRIU lazy-pages",
+                       "criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpint" % client_ip)
             print "- live restore container"
-            run_cmd_timed("gnome-terminal -t 'Container - %s' -- /home/islab/src/dockermig/scripts/run.sh runc --debug restore --tcp-established --shell-job --file-locks --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (container, bundle_path, container))
+            new_window("Restore - %s" % container, 
+                       "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
             time.sleep(2)
             print "- tweak fw rules"
             os.system("iptables -F")
