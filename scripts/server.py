@@ -55,6 +55,14 @@ def getsize(path):
     global retvar
     retvar, sz = commands.getstatusoutput("du -hs %s" % path)
     return sz
+    
+def print_fw():
+    print "- fw rules:"
+    os.system("sudo iptables -L")
+    print "---------------------------"
+    os.system("sudo iptables -t nat -L")
+    print "---------------------------"
+    os.system("sudo iptables -t mangle -L")
         
 extensions = "--tcp-established --shell-job --file-locks"
 
@@ -104,7 +112,9 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "- live restore container"
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
-            time.sleep(2)
+            time.sleep(1)
+            print_fw()
+            time.sleep(1)
             print "- tweak fw rules"
             os.system("iptables -F")
             os.system("iptables -t nat -F")
