@@ -58,11 +58,11 @@ def getsize(path):
     
 def print_fw():
     print "- fw rules:"
-    os.system("sudo iptables -L")
-    print "---------------------------"
-    os.system("sudo iptables -t nat -L")
-    print "---------------------------"
-    os.system("sudo iptables -t mangle -L")
+    os.system("sudo iptables -nL --line-numbers")
+#    print "---------------------------"
+#    os.system("sudo iptables -t nat -L")
+#    print "---------------------------"
+#    os.system("sudo iptables -t mangle -L")
         
 extensions = "--tcp-established --shell-job --file-locks"
 
@@ -113,11 +113,9 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
             time.sleep(1)
-            print_fw()
-            time.sleep(1)
             print "- tweak fw rules"
-            os.system("iptables -F")
-            os.system("iptables -t nat -F")
+            os.system("iptables -D CRIU -j DROP")
+            print_fw()
 
         return retvar
         
@@ -136,4 +134,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print "- ctrl-c %d " % os.getpid()
         svr.shutdown()
+        th.join()
 
