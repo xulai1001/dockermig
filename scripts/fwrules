@@ -1,0 +1,78 @@
+- fw rules:
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+CRIU       all  --  anywhere             anywhere            
+ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:domain
+ACCEPT     udp  --  anywhere             anywhere             udp dpt:domain
+ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:bootps
+ACCEPT     udp  --  anywhere             anywhere             udp dpt:bootps
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+CRIU       all  --  anywhere             anywhere            
+
+Chain CRIU (2 references)
+target     prot opt source               destination         
+ACCEPT     all  --  anywhere             anywhere             mark match 0xc114
+DROP       all  --  anywhere             anywhere            
+
+Chain DOCKER (0 references)
+target     prot opt source               destination         
+
+Chain DOCKER-ISOLATION-STAGE-1 (0 references)
+target     prot opt source               destination         
+DOCKER-ISOLATION-STAGE-2  all  --  anywhere             anywhere            
+DOCKER-ISOLATION-STAGE-2  all  --  anywhere             anywhere            
+RETURN     all  --  anywhere             anywhere            
+
+Chain DOCKER-ISOLATION-STAGE-2 (2 references)
+target     prot opt source               destination         
+DROP       all  --  anywhere             anywhere            
+DROP       all  --  anywhere             anywhere            
+RETURN     all  --  anywhere             anywhere            
+
+Chain DOCKER-USER (0 references)
+target     prot opt source               destination         
+RETURN     all  --  anywhere             anywhere            
+---------------------------
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+DOCKER     all  --  anywhere             anywhere             ADDRTYPE match dst-type LOCAL
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+DOCKER     all  --  anywhere            !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+MASQUERADE  all  --  172.17.0.0/16        anywhere            
+MASQUERADE  all  --  172.18.0.0/16        anywhere            
+MASQUERADE  all  --  10.0.3.0/24         !10.0.3.0/24         
+
+Chain DOCKER (2 references)
+target     prot opt source               destination         
+RETURN     all  --  anywhere             anywhere            
+RETURN     all  --  anywhere             anywhere            
+---------------------------
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+CHECKSUM   udp  --  anywhere             anywhere             udp dpt:bootpc CHECKSUM fill
+

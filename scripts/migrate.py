@@ -98,7 +98,7 @@ def lazy_dump():
         
     print "- time: %.2g s, retvar: %d" % (time.time() - st, retvar)
     print "- CHECKPOINT size: %s" % getsize("checkpoint")
-    # print_fw()
+    print_fw()
 
 def send_rootfs():
     global remote_base_path
