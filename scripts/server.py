@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import socket, sys, select
+import socket, sys, select, signal
 import time, os, shutil, subprocess, commands
 import contextlib
 import distutils.util
@@ -120,9 +120,15 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             os.system("iptables -t nat -F")
 
         return retvar
+        
+def shutdown(svr):
+    svr.shutdown()
+    sys.exit()
 
 if __name__ == "__main__":
     svr = pyjsonrpc.ThreadingHttpServer(
         server_address = ('0.0.0.0', 9000), RequestHandlerClass = MigrateService)
     print "- start migrate server..."
+    signal.signal(signal.SIGINT, lambda n, f: shutdown(svr))
     svr.serve_forever()
+    
