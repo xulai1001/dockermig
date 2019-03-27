@@ -112,7 +112,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "- live restore container"
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
-            time.sleep(1)
+            time.sleep(2)
             print "- tweak fw rules"
             os.system("iptables -D CRIU -j DROP")
             print_fw()
