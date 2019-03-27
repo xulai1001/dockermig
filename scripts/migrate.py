@@ -81,9 +81,9 @@ def checkpoint_dump():
 def lazy_dump():
     global retvar
 #    cmd = """gnome-terminal -t 'CRIU page server' -- /home/islab/src/dockermig/scripts/run.sh runc --debug checkpoint --tcp-established --shell-job --file-locks --image-path checkpoint --parent-path %s/bundle/predump --shell-job --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe %s""" % (remote_base_path, container)
-    cmd = """runc --debug checkpoint %s
-                  --image-path checkpoint --parent-path %s/bundle/predump
-                  --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe
+    cmd = """runc --debug checkpoint %s \\
+                  --image-path checkpoint --parent-path %s/bundle/predump \\
+                  --lazy-pages --page-server 0.0.0.0:27000 --status-fd copy_pipe \\
                   %s""" % (extensions, remote_base_path, container)
     if os.path.exists("copy_pipe"):
         os.unlink("copy_pipe")
@@ -98,7 +98,7 @@ def lazy_dump():
         
     print "- time: %.2g s, retvar: %d" % (time.time() - st, retvar)
     print "- CHECKPOINT size: %s" % getsize("checkpoint")
-    print_fw()
+    # print_fw()
 
 def send_rootfs():
     global remote_base_path

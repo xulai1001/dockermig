@@ -108,7 +108,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             
             print "- connect lazy-page server"
             new_window("CRIU lazy-pages",
-                       "criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpint" % client_ip)
+                       "criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpoint" % client_ip)
             print "- live restore container"
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
