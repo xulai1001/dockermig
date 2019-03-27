@@ -120,15 +120,13 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             os.system("iptables -t nat -F")
 
         return retvar
-        
-def shutdown(svr):
-    svr.shutdown()
-    sys.exit()
 
 if __name__ == "__main__":
     svr = pyjsonrpc.ThreadingHttpServer(
         server_address = ('0.0.0.0', 9000), RequestHandlerClass = MigrateService)
     print "- start migrate server..."
-    signal.signal(signal.SIGINT, lambda n, f: shutdown(svr))
-    svr.serve_forever()
+    try:
+        svr.serve_forever()
+    except KeyboardInterrupt:
+        svr.shutdown()
     
