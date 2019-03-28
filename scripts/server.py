@@ -68,13 +68,29 @@ def parse_fw():
             name = lines[i].split(" ")[1]
             result[name] = []
             i+=2
-            while i<len(lines) and !lines[i].startswith("Chain"):
-                rule = map(lambda s: s.strip(), lines[i].split("\t"))
-                result[name].append(rule) if len(rule) > 0
+            while i<len(lines) and not lines[i].startswith("Chain"):
+                rule = filter(lambda s: len(s)>0, lines[i].split("  "))
+                rule = map(lambda s: s.strip(), rule)
+                if len(rule)>1: result[name].append(rule)
                 i+=1
         else: i+=1
-    pprint.pprint(result)
+    # pprint.pprint(result)
     return result
+    
+def wait_remove_drop_rules():
+    found = False
+    t = time.time()
+    while not found:
+        rules = parse_fw()
+        if rules.has_key("CRIU"):
+            for r in rules["CRIU"]:
+                if r[0] == "DROP":
+                    found = True
+                    break
+        time.sleep(0.1)
+    # remove the drop rules
+    os.system("sudo iptables -D CRIU -j DROP")
+    print "- found criu drop rule and remove it. Time: %.2g s" % (time.time() - t)
         
 extensions = "--tcp-established --shell-job --file-locks"
 
@@ -124,11 +140,8 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "- live restore container"
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
-            time.sleep(2)
             print "- tweak fw rules"
-#            os.system("iptables -D CRIU -j DROP")
- #           print_fw()
-            parse_fw()
+            wait_remove_drop_rules()
 
         return retvar
         
