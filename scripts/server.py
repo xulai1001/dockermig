@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import socket, sys, select, signal, threading
-import time, os, shutil, subprocess, commands
+import time, os, shutil, subprocess, commands, pprint
 import contextlib
 import distutils.util
 import pyjsonrpc
@@ -59,10 +59,22 @@ def getsize(path):
 def print_fw():
     print "- fw rules:"
     os.system("sudo iptables -nL --line-numbers")
-#    print "---------------------------"
-#    os.system("sudo iptables -t nat -L")
-#    print "---------------------------"
-#    os.system("sudo iptables -t mangle -L")
+
+def parse_fw():
+    lines = os.popen("sudo iptables -nL").readlines()
+    result = {}; i=0; j=0
+    while i<len(lines):
+        if lines[i].startswith("Chain"):
+            name = lines[i].split(" ")[1]
+            result[name] = []
+            i+=2
+            while i<len(lines) and !lines[i].startswith("Chain"):
+                rule = map(lambda s: s.strip(), lines[i].split("\t"))
+                result[name].append(rule) if len(rule) > 0
+                i+=1
+        else: i+=1
+    pprint.pprint(result)
+    return result
         
 extensions = "--tcp-established --shell-job --file-locks"
 
@@ -114,8 +126,9 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
             time.sleep(2)
             print "- tweak fw rules"
-            os.system("iptables -D CRIU -j DROP")
-            print_fw()
+#            os.system("iptables -D CRIU -j DROP")
+ #           print_fw()
+            parse_fw()
 
         return retvar
         
