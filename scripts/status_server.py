@@ -6,21 +6,19 @@ import distutils.util
 import pyjsonrpc
 
 base_path = "/home/islab/src/dockermig/containers/"
+containers = {}
 
 class StatusService(pyjsonrpc.HttpRequestHandler):
 
-    def __init__(self):
-        self.containers = {}
- 
     # service management APIs
     @pyjsonrpc.rpcmethod
     def set_container(self, name, ip):
         print "- set container=%s ip=%s" % (name, ip)
-        self.containers[name] = ip
+        containers[name] = ip
         
     @pyjsonrpc.rpcmethod
     def get_container(self, name):
-        ret = self.containers.get(name, "")
+        ret = containers.get(name, "")
         print "- get container=%s -> ip=%s -" % (name, ret)
         return ret
         
