@@ -35,17 +35,18 @@ def run_cmd_timed(cmd):
 def start_kad():
     print "- start keepalived..."
     os.system("keepalived -d")
-    os.system("gnome-terminal -t 'Keepalived log' -- tail -f /var/log/syslog")
+    #os.system("gnome-terminal -t 'Keepalived log' -- tail -f /var/log/syslog")
     
 def wait_ip(ipaddr):
     down = True
+    t = time.time()
     while down:
         try:
             test_socket = socket.socket()
             test_socket.bind((ipaddr, 27001))
         except: continue
         down = False
-        print "- ip %s is up" % ipaddr
+        print "- ip %s is up, Time: %.2g s" % (ipaddr, time.time() - t)
         
 def new_window(title, cmdline):
     print "> w: %s, cmd: %s" % (title, cmdline)
@@ -95,6 +96,7 @@ def wait_remove_drop_rules():
 extensions = "--tcp-established --shell-job --file-locks"
 
 class MigrateService(pyjsonrpc.HttpRequestHandler):
+
     @pyjsonrpc.rpcmethod
     def prepare(self, client_ip, container):
         print "> prepare to migrate: %s from %s" % (container, client_ip)
@@ -103,28 +105,28 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         with pushd(bundle_path):
             os.system("rm -rf predump checkpoint")
         return bundle_path
-        
-    @pyjsonrpc.rpcmethod        
-    def restore(self, container):
-        print "> restore: %s" % container
-        bundle_path = base_path + container + "/bundle/"
-        start_kad()
-        with pushd(bundle_path):
-            print "- restore symlink..."
-            print "ln -s %s/predump checkpoint/parent" % bundle_path
-            os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
-            new_window("Restore - %s" % container,
-                       "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s %s" % (extensions, bundle_path, container))
-            time.sleep(2)
-            print "- tweak fw rules"
-            os.system("iptables -F")
-            os.system("iptables -t nat -F")
-        return retvar
-        
+###        
+#    @pyjsonrpc.rpcmethod        
+#    def restore(self, container):
+#        print "> restore: %s" % container
+#        bundle_path = base_path + container + "/bundle/"
+ #       start_kad()
+ #       with pushd(bundle_path):
+ #           print "- restore symlink..."
+ #           print "ln -s %s/predump checkpoint/parent" % bundle_path
+ #           os.system("ln -s %s/predump checkpoint/parent" % bundle_path)
+ #           new_window("Restore - %s" % container,
+ #                      "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s %s" % (extensions, bundle_path, container))
+ #           time.sleep(2)
+ #           print "- tweak fw rules"
+ #           os.system("iptables -F")
+ #           os.system("iptables -t nat -F")
+ #       return retvar
+###        
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container):
         print "> lazy-restore: %s from %s" % (container, client_ip)
-        start_kad() # start keepalived
+        # start_kad() # start keepalived
         print "- wait for ip address takes effect..."
         wait_ip("192.168.100.100")
         bundle_path = base_path + container + "/bundle/"
@@ -144,8 +146,9 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             wait_remove_drop_rules()
 
         return retvar
-        
-svr = pyjsonrpc.ThreadingHttpServer(server_address=("0.0.0.0", 9000), RequestHandlerClass=MigrateService)    
+       
+svr = pyjsonrpc.ThreadingHttpServer(server_address=("0.0.0.0", 9000), RequestHandlerClass=MigrateService)
+svr.allow_reuse_address = True   
 def server():
     print "- start migrate server thread %d" % os.getpid()
     svr.serve_forever()

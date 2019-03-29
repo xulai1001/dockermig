@@ -10,6 +10,7 @@ dest = sys.argv[2]
 lazy = True
 pre = True
 remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
+status_server = "192.168.20.19:9001"
 # bundle: original container
 # predump: predump image
 # checkpoint: checkpoint image
@@ -120,6 +121,11 @@ if __name__ == "__main__":
     ip = get_ip()
     print "- host ip: %s" % ip
     cli = pyjsonrpc.HttpClient(url = "http://%s:9000/jsonrpc" % dest)
+    status_cli = pyjsonrpc.HttpClient(url = "http://%s/jsonrpc" % status_server)
+    
+    # tell the status server that we have the container now
+    status_cli.set_container(container, ip)
+    
     os.system("rm -rf predump checkpoint")
     remote_base_path = cli.prepare(ip, container)
     print "- remote path: %s:%s" % (dest, remote_base_path)
@@ -129,8 +135,12 @@ if __name__ == "__main__":
     send_pre_dump()
 #    checkpoint_dump()
     lazy_dump()
+
+    # tell the status server that we are sending the container now
+    status_cli.set_container(container, dest)
+
     send_checkpoint()
-    stop_kad()
+   # stop_kad()
 #    cli.restore(container)
     cli.lazy_restore(ip, container)
     
