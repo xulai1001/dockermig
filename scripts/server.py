@@ -128,7 +128,8 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         print "> lazy-restore: %s from %s" % (container, client_ip)
         # start_kad() # start keepalived
         print "- wait for ip address %s takes effect..." % vip
-        wait_ip(vip)
+        if len(vip) > 0: wait_ip(vip)
+        
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
             print "- restore symlink..."
