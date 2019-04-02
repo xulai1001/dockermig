@@ -7,6 +7,7 @@ import pyjsonrpc, socket
 
 container = sys.argv[1]
 dest = sys.argv[2]
+vip = sys.argv[3]
 lazy = True
 pre = True
 remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
@@ -119,7 +120,7 @@ def stop_kad():
     
 if __name__ == "__main__":
     ip = get_ip()
-    print "- host ip: %s" % ip
+    print "- host ip: %s, service ip (vip): %s" % (ip, vip)
     cli = pyjsonrpc.HttpClient(url = "http://%s:9000/jsonrpc" % dest)
     status_cli = pyjsonrpc.HttpClient(url = "http://%s/jsonrpc" % status_server)
     
@@ -142,5 +143,5 @@ if __name__ == "__main__":
     send_checkpoint()
    # stop_kad()
 #    cli.restore(container)
-    cli.lazy_restore(ip, container)
+    cli.lazy_restore(ip, container, vip)
     
