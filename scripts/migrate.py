@@ -146,6 +146,7 @@ if __name__ == "__main__":
 
     # tell the status server that we are sending the container now
     status_cli.set_container(container, dest)
+    cli.move_ip(vip)
 
     send_checkpoint()
    # stop_kad()

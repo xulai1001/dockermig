@@ -42,7 +42,9 @@ def start_kad():
     os.system("keepalived -d")
     #os.system("gnome-terminal -t 'Keepalived log' -- tail -f /var/log/syslog")
     
+ip_ready = {}
 def wait_ip(ipaddr):
+    ip_ready[ipaddr] = False
     down = True
     st = time.time()
     while down:
@@ -51,6 +53,7 @@ def wait_ip(ipaddr):
             test_socket.bind((ipaddr, 27001))
         except: continue
         down = False
+        ip_ready[ipaddr] = True
     
     t = time.time() - st; times["ipaddr"] = t    
     print "- ip %s is up, Time: %.2g s" % (ipaddr, t)
@@ -134,12 +137,16 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
  #       return retvar
 ###        
     @pyjsonrpc.rpcmethod
+    def move_ip(self, vip):
+        print "+ start move_ip..."
+        th = threading.Thread(target=wait_ip, args=vip, name="wait_ip_thread")
+        th.start()
+        
+    @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container, vip):
         print "> lazy-restore: %s from %s" % (container, client_ip)
         st = time.time()
         # start_kad() # start keepalived
-        print "- wait for ip address %s takes effect..." % vip
-        if len(vip) > 0: wait_ip(vip)
         
         bundle_path = base_path + container + "/bundle/"
         with pushd(bundle_path):
@@ -151,6 +158,13 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             print "- connect lazy-page server"
             new_window("CRIU lazy-pages",
                        "criu lazy-pages --tcp-established -j -l --page-server --address %s --port 27000 -vvvv -D checkpoint -W checkpoint" % client_ip)
+            
+            print "- wait for ip to take effect..."
+            st_ip = time.time()
+            while not ip_ready.get(vip, False):
+                time.sleep(0.1)
+            t = time.time() - st_ip; times["wait_ip_extra"] = t
+            print "- Time: %.2g s" % t
             print "- live restore container"
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
@@ -163,9 +177,11 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def report_time(self, client_ts, client_sz):
         print "----------------------"
+        print "migrate summary:"
         print "dump sizes:"; pprint.pprint(client_sz)
         print "client times:"; pprint.pprint(client_ts)
         print "server times:"; pprint.pprint(times)
+        print "----------------------"
        
 svr = pyjsonrpc.ThreadingHttpServer(server_address=("0.0.0.0", 9000), RequestHandlerClass=MigrateService)
 svr.allow_reuse_address = True   
