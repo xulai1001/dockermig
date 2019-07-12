@@ -156,4 +156,6 @@ if __name__ == "__main__":
     pprint(times)
     print "- Sizes:"
     pprint(sizes)
+    cli.report_time(times, sizes)
+    
     

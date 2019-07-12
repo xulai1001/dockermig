@@ -158,8 +158,14 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             wait_remove_drop_rules()
         t = time.time() - st; times["restore"] = t
         print "- Restore time: %.2g s" % t 
-        
         return retvar
+        
+    @pyjsonrpc.rpcmethod
+    def report_time(self, client_ts, client_sz):
+        print "----------------------"
+        print "dump sizes:"; pprint.pprint(client_sz)
+        print "client times:"; pprint.pprint(client_ts)
+        print "server times:"; pprint.pprint(times)
        
 svr = pyjsonrpc.ThreadingHttpServer(server_address=("0.0.0.0", 9000), RequestHandlerClass=MigrateService)
 svr.allow_reuse_address = True   
