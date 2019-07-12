@@ -6,6 +6,9 @@ import distutils.util
 import pyjsonrpc
 
 base_path = "/home/islab/src/dockermig/containers/"
+times = {}
+sizes = {}
+extensions = "--tcp-established --shell-job --file-locks"
 
 # helpers
 # https://stackoverflow.com/questions/6194499/pushd-through-os-system
@@ -24,13 +27,15 @@ def warn_on_error():
     if retvar != 0:
         print "- error: %d..." % retvar
 
-def run_cmd_timed(cmd):
+def run_cmd_timed(cmd, tag=""):
     global retvar
     print "- " + cmd
     st = time.time()
     retvar = os.system(cmd)
     warn_on_error()
-    print "- time: %.2g s" % (time.time() - st)
+    t = time.time() - st
+    if len(tag)>0: times[tag] = t
+    print "- time: %.2g s" % t
     
 def start_kad():
     print "- start keepalived..."
@@ -39,14 +44,16 @@ def start_kad():
     
 def wait_ip(ipaddr):
     down = True
-    t = time.time()
+    st = time.time()
     while down:
         try:
             test_socket = socket.socket()
             test_socket.bind((ipaddr, 27001))
         except: continue
         down = False
-        print "- ip %s is up, Time: %.2g s" % (ipaddr, time.time() - t)
+    
+    t = time.time() - st; times["ipaddr"] = t    
+    print "- ip %s is up, Time: %.2g s" % (ipaddr, t)
         
 def new_window(title, cmdline):
     print "> w: %s, cmd: %s" % (title, cmdline)
@@ -55,6 +62,7 @@ def new_window(title, cmdline):
 def getsize(path):
     global retvar
     retvar, sz = commands.getstatusoutput("du -hs %s" % path)
+    sizes[path] = sz
     return sz
     
 def print_fw():
@@ -80,7 +88,7 @@ def parse_fw():
     
 def wait_remove_drop_rules():
     found = False
-    t = time.time()
+    st = time.time()
     while not found:
         rules = parse_fw()
         if rules.has_key("CRIU"):
@@ -91,19 +99,21 @@ def wait_remove_drop_rules():
         time.sleep(0.1)
     # remove the drop rules
     os.system("sudo iptables -D CRIU -j DROP")
-    print "- found criu drop rule and remove it. Time: %.2g s" % (time.time() - t)
-        
-extensions = "--tcp-established --shell-job --file-locks"
+    t = time.time() - st; times["tweak_fw"] = t
+    print "- found criu drop rule and remove it. Time: %.2g s" % t 
 
 class MigrateService(pyjsonrpc.HttpRequestHandler):
 
     @pyjsonrpc.rpcmethod
     def prepare(self, client_ip, container):
         print "> prepare to migrate: %s from %s" % (container, client_ip)
+        st = time.time()
         bundle_path = base_path + container + "/bundle/"
         os.system("mkdir -p %s" % bundle_path)
         with pushd(bundle_path):
             os.system("rm -rf predump checkpoint")
+        t = time.time() - st; times["prepare"] = t
+        print "- Time: %.2g s" % t
         return bundle_path
 ###        
 #    @pyjsonrpc.rpcmethod        
@@ -126,6 +136,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container, vip):
         print "> lazy-restore: %s from %s" % (container, client_ip)
+        st = time.time()
         # start_kad() # start keepalived
         print "- wait for ip address %s takes effect..." % vip
         if len(vip) > 0: wait_ip(vip)
@@ -145,7 +156,9 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
             print "- tweak fw rules"
             wait_remove_drop_rules()
-
+        t = time.time() - st; times["restore"] = t
+        print "- Restore time: %.2g s" % t 
+        
         return retvar
        
 svr = pyjsonrpc.ThreadingHttpServer(server_address=("0.0.0.0", 9000), RequestHandlerClass=MigrateService)

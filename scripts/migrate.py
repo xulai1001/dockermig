@@ -4,6 +4,7 @@ import time, os, shutil, subprocess, commands
 import contextlib
 import distutils.util
 import pyjsonrpc, socket
+from pprint import pprint
 
 container = sys.argv[1]
 dest = sys.argv[2]
@@ -12,6 +13,8 @@ lazy = True
 pre = True
 remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
 status_server = "192.168.20.19:9001"
+times = {}
+sizes = {}
 # bundle: original container
 # predump: predump image
 # checkpoint: checkpoint image
@@ -42,13 +45,15 @@ def exit_on_error():
         print "- error: %d, exiting..." % retvar
         sys.exit(retvar)  
 
-def run_cmd_timed(cmd):
+def run_cmd_timed(cmd, tag=""):
     global retvar
     print "- " + cmd
     st = time.time()
     retvar = os.system(cmd)
     exit_on_error()
-    print "- time: %.2g s" % (time.time() - st)
+    t = time.time() - st
+    print "- time: %.2g s" % t
+    if len(tag)>0: times[tag] = t
     
 def new_window(title, cmdline):
     print "> w: %s, cmd: %s" % (title, cmdline)
@@ -57,6 +62,7 @@ def new_window(title, cmdline):
 def getsize(path):
     global retvar
     retvar, sz = commands.getstatusoutput("du -hs %s" % path)
+    sizes[path] = sz
     return sz
 
 def print_fw():
@@ -68,11 +74,11 @@ extensions = "--tcp-established --shell-job --file-locks"
 
 def pre_dump():
     print "- start predump..."
-    run_cmd_timed("sudo runc checkpoint %s --pre-dump --image-path predump %s" % (extensions, container))
+    run_cmd_timed("sudo runc checkpoint %s --pre-dump --image-path predump %s" % (extensions, container), "predump")
     print "- PRE-DUMP size: %s" % getsize("predump")
     
 def checkpoint_dump():    
-    run_cmd_timed("sudo runc --debug checkpoint %s --image-path checkpoint --parent-path %s/bundle/predump %s" % (extensions, remote_base_path, container))
+    run_cmd_timed("sudo runc --debug checkpoint %s --image-path checkpoint --parent-path %s/bundle/predump %s" % (extensions, remote_base_path, container), "checkpoint")
     os.system("unlink checkpoint/parent") # remove symlink to parent. will be restored in dest host
     print "- CHECKPOINT size: %s" % getsize("checkpoint")
 
@@ -94,25 +100,26 @@ def lazy_dump():
     if x == "\0":
         print "- ready for lazy page copy..."
         
-    print "- time: %.2g s, retvar: %d" % (time.time() - st, retvar)
+    t = time.time() - st; times["checkpoint"] = t
+    print "- time: %.2g s, retvar: %d" % (t, retvar)
     print "- CHECKPOINT size: %s" % getsize("checkpoint")
     print_fw()
 
 def send_rootfs():
     global remote_base_path
     print "- send ROOTFS to %s:%s/rootfs" % (dest, remote_base_path)
-    run_cmd_timed("rsync -aqz rootfs %s:%s" % (dest, remote_base_path))
+    run_cmd_timed("rsync -aqz rootfs %s:%s" % (dest, remote_base_path), "rootfs_send")
     os.system("scp config.json %s:%s" % (dest, remote_base_path))
     
 def send_pre_dump():
     global remote_base_path
     print "- send PRE-DUMP to %s:%s" % (dest, remote_base_path)
-    run_cmd_timed("rsync -aqz predump %s:%s" % (dest, remote_base_path))
+    run_cmd_timed("rsync -aqz predump %s:%s" % (dest, remote_base_path), "predump_send")
     
 def send_checkpoint():
     global remote_base_path
     print "- send CHECKPOINT to %s:%s" % (dest, remote_base_path)
-    run_cmd_timed("rsync -aqz checkpoint %s:%s" % (dest, remote_base_path))
+    run_cmd_timed("rsync -aqz checkpoint %s:%s" % (dest, remote_base_path), "checkpoint_send")
     
 def stop_kad():
     print "- stop keepalived..."
@@ -144,4 +151,9 @@ if __name__ == "__main__":
    # stop_kad()
 #    cli.restore(container)
     cli.lazy_restore(ip, container, vip)
+    
+    print "- Times:"
+    pprint(times)
+    print "- Sizes:"
+    pprint(sizes)
     
