@@ -139,7 +139,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def move_ip(self, vip):
         print "+ start move_ip..."
-        th = threading.Thread(target=wait_ip, args=vip, name="wait_ip_thread")
+        th = threading.Thread(target=wait_ip, args=(vip,), name="wait_ip_thread")
         th.start()
         
     @pyjsonrpc.rpcmethod

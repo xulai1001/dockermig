@@ -8,7 +8,8 @@ from pprint import pprint
 
 container = sys.argv[1]
 dest = sys.argv[2]
-vip = ""; if len(sys.argv)>3: vip = sys.argv[3]
+vip = ""
+if len(sys.argv)>3: vip = sys.argv[3]
 lazy = True
 pre = True
 remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
