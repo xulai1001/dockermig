@@ -1,0 +1,25 @@
+migrate summary:
+dump sizes:
+{u'checkpoint': u'2.3M\tcheckpoint', u'predump': u'5.4M\tpredump'}
+client times:
+{u'checkpoint': 1.1146259307861328,
+ u'checkpoint_send': 0.7726500034332275,
+ u'migrate_end': 1562941396.459953,
+ u'migrate_start': 1562941385.661598,
+ u'migrate_stop': 1562941390.933923,
+ u'predump': 0.41043782234191895,
+ u'predump_send': 1.4692089557647705,
+ u'rootfs_send': 2.5789170265197754}
+server times:
+{'ipaddr': 4.2532172203063965,
+ 'prepare': 0.02378082275390625,
+ 'restore_end': 1562941396.466365,
+ 'restore_op': 1.2429981231689453,
+ 'restore_rest': 1562941395.223363,
+ 'restore_start': 1562941392.853591,
+ 'restore_total': 3.6127700805664062,
+ 'tweak_fw': 0.6227262020111084,
+ 'wait_ip_extra': 0.21344900131225586}
+----------------------
+{"checkpoint": "2.3M\tcheckpoint", "predump": "5.4M\tpredump"} {"predump": 0.41043782234191895, "migrate_stop": 1562941390.933923, "checkpoint_send": 0.7726500034332275, "migrate_end": 1562941396.459953, "rootfs_send": 2.5789170265197754, "checkpoint": 1.1146259307861328, "predump_send": 1.4692089557647705, "migrate_start": 1562941385.661598} {"restore_op": 1.2429981231689453, "prepare": 0.02378082275390625, "restore_total": 3.6127700805664062, "ipaddr": 4.2532172203063965, "restore_rest": 1562941395.223363, "restore_start": 1562941392.853591, "wait_ip_extra": 0.21344900131225586, "restore_end": 1562941396.466365, "tweak_fw": 0.6227262020111084}
+
