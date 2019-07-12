@@ -136,6 +136,8 @@ if __name__ == "__main__":
     status_cli.set_container(container, ip)
     
     os.system("rm -rf predump checkpoint")
+    
+    times["migrate_start"] = time.time()
     remote_base_path = cli.prepare(ip, container)
     print "- remote path: %s:%s" % (dest, remote_base_path)
     
@@ -143,16 +145,19 @@ if __name__ == "__main__":
     pre_dump()
     send_pre_dump()
 #    checkpoint_dump()
-    lazy_dump()
 
     # tell the status server that we are sending the container now
     status_cli.set_container(container, dest)
     cli.move_ip(vip)
 
+    times["migrate_stop"] = time.time()
+    lazy_dump()
+
     send_checkpoint()
    # stop_kad()
 #    cli.restore(container)
     cli.lazy_restore(ip, container, vip)
+    times["migrate_end"] = time.time()
     
     print "- Times:"
     pprint(times)

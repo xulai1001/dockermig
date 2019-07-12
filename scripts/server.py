@@ -3,7 +3,7 @@ import socket, sys, select, signal, threading
 import time, os, shutil, subprocess, commands, pprint
 import contextlib
 import distutils.util
-import pyjsonrpc
+import pyjsonrpc, json
 
 base_path = "/home/islab/src/dockermig/containers/"
 times = {}
@@ -145,7 +145,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
     @pyjsonrpc.rpcmethod
     def lazy_restore(self, client_ip, container, vip):
         print "> lazy-restore: %s from %s" % (container, client_ip)
-        st = time.time()
+        st = time.time(); times["restore_start"] = st
         # start_kad() # start keepalived
         
         bundle_path = base_path + container + "/bundle/"
@@ -166,12 +166,14 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
             t = time.time() - st_ip; times["wait_ip_extra"] = t
             print "- Time: %.2g s" % t
             print "- live restore container"
+            rt = time.time(); times["restore_rest"] = rt
             new_window("Restore - %s" % container, 
                        "runc --debug restore %s --image-path checkpoint --work-path checkpoint --bundle %s --lazy-pages %s" % (extensions, bundle_path, container))
             print "- tweak fw rules"
             wait_remove_drop_rules()
-        t = time.time() - st; times["restore"] = t
-        print "- Restore time: %.2g s" % t 
+        et = time.time()
+        times["restore_op"] = et - rt; times["restore_total"] = et - st; times["restore_end"] = time.time()
+        print "- Restore time: %.2g s" % times["restore_op"] 
         return retvar
         
     @pyjsonrpc.rpcmethod
@@ -182,6 +184,7 @@ class MigrateService(pyjsonrpc.HttpRequestHandler):
         print "client times:"; pprint.pprint(client_ts)
         print "server times:"; pprint.pprint(times)
         print "----------------------"
+        print json.dumps(client_sz), json.dumps(client_ts), json.dumps(times)
        
 svr = pyjsonrpc.ThreadingHttpServer(server_address=("0.0.0.0", 9000), RequestHandlerClass=MigrateService)
 svr.allow_reuse_address = True   
