@@ -8,11 +8,11 @@ from pprint import pprint
 
 container = sys.argv[1]
 dest = sys.argv[2]
-vip = sys.argv[3]
+vip = ""; if len(sys.argv)>3: vip = sys.argv[3]
 lazy = True
 pre = True
 remote_base_path = "/home/islab/src/dockermig/containers/%s/" % container
-status_server = "192.168.20.19:9001"
+status_server = "%s:9001" % dest
 times = {}
 sizes = {}
 # bundle: original container

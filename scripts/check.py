@@ -7,7 +7,7 @@ import pyjsonrpc, socket
 
 container = sys.argv[1]
 port = sys.argv[2]
-status_server = "192.168.20.19:9001"
+status_server = "192.168.20.24:9001"
 
 # helpers
 # https://blog.csdn.net/u013314786/article/details/78962103
